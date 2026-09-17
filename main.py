@@ -20,7 +20,7 @@ print(f"Обробка останньої новини: {news['title']}")
 prompt = f"Переклади українською цей текст новини Steam. Зроби його читабельним, збережи основний зміст і оформи під повідомлення для Discord. Максимум 1900 символів:\n\n{news['contents'][:4000]}"
 
 response = client.models.generate_content(
-    model='gemini-3.6-flash',
+    model='gemini-1.5-flash',
     contents=prompt
 )
 

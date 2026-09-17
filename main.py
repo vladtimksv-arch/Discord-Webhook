@@ -1,10 +1,12 @@
-import os, requests
+import os, requests, time
 from google import genai
 
+# 1. Завантаження ключів безпечно із секретів GitHub
 WEBHOOK_URL = os.environ["DISCORD_WEBHOOK"]
 API_KEY = os.environ["GEMINI_API_KEY"]
-APP_ID = "1867240"
+APP_ID = "1867240" # ID гри Wardogs
 
+# 2. Отримання новин зі Steam API
 client = genai.Client(api_key=API_KEY)
 url = f"https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid={APP_ID}&count=1"
 response = requests.get(url)
@@ -15,8 +17,15 @@ if not news_items:
     exit()
 
 news = news_items[0]
+current_time = time.time()
 
-# 1. Чорний список (російські ЗМІ — блокуємо суворо)
+# 3. Перевірка на свіжість (1200 секунд = 20 хвилин). 
+# Якщо новина старша, скрипт зупиняється, щоб не дублювати сповіщення.
+if current_time - news['date'] > 1200:
+    print("Нових новин за останні 20 хвилин немає. Чекаємо далі...")
+    exit()
+
+# 4. Чорний список (російські медіа — блокуємо суворо)
 blacklisted_media = [
     "igromania", "dtf", "playground", "stopgame", "kanobu",
     "goha", "riot pixels", "gamemag", "ixbt", "shazoo",
@@ -30,9 +39,9 @@ if any(media in feed_label.lower() or media in feed_name.lower() for media in bl
     print(f"Блокування: новина від російського ЗМІ ({feed_label}), ігноруємо.")
     exit()
 
-print(f"Обробка новини від джерела: {feed_label}")
+print(f"Обробка свіжої новини від джерела: {feed_label}")
 
-# 2. Промпт: переклад, винесення категорії в КІНЕЦЬ та розпізнавання світових медіа (IGN, PC Gamer тощо)
+# 5. Промпт для Gemini з вимогою розмістити категорію в кінець
 prompt = f"""Проаналізуй текст новини (Джерело: {feed_label}) та переклади його українською.
 
 1. Зроби заголовок новини жирним шрифтом на самому початку: **{news['title']}**
@@ -46,6 +55,7 @@ prompt = f"""Проаналізуй текст новини (Джерело: {fe
 
 Текст: {news['contents'][:4000]}"""
 
+# 6. Генерація через Gemini з обробкою помилки 503 (перевантаження)
 max_retries = 3
 response_text = ""
 
@@ -65,7 +75,7 @@ for attempt in range(max_retries):
             print(f"Помилка генерації тексту: {e}")
             exit()
 
-# 3. Відправка в Discord із правильним посиланням в кінці
+# 7. Виправлення пробілів у посиланні та відправка у Discord
 safe_url = news['url'].replace(" ", "%20")
 
 data = {

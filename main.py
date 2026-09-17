@@ -18,7 +18,7 @@ news = news_items[0]
 
 # 2. Перевірка, чи новина свіжа (за останні 65 хвилин / 3900 секунд)
 current_time = time.time()
-if current_time - news['date'] < 3900:
+if current_time - news['date'] < 1200:
     print(f"Знайдено нову новину: {news['title']}")
     
     # 3. Переклад через Gemini

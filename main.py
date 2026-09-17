@@ -1,4 +1,4 @@
-import os, requests, time
+import os, requests
 from google import genai
 
 WEBHOOK_URL = os.environ["DISCORD_WEBHOOK"]
@@ -15,25 +15,21 @@ if not news_items:
     exit()
 
 news = news_items[0]
-current_time = time.time()
+print(f"Обробка останньої новини: {news['title']}")
 
-if current_time - news['date'] < 1200:
-    print(f"Знайдено нову новину: {news['title']}")
-    prompt = f"Переклади українською цей текст новини Steam. Зроби його читабельним, збережи основний зміст і оформи під повідомлення для Discord. Максимум 1900 символів:\n\n{news['contents'][:4000]}"
-    
-    response = client.models.generate_content(
-        model='gemini-3.5-flash',
-        contents=prompt
-    )
-    
-    data = {
-        "content": f"**Новина: {news['title']}**\n\n{response.text}\n\n*🔗 [Читати в Steam]({news['url']})*"
-    }
-    res = requests.post(WEBHOOK_URL, json=data)
-    
-    if res.status_code == 204:
-        print("Успішно відправлено в Discord!")
-    else:
-        print(f"Помилка відправки: {res.text}")
+prompt = f"Переклади українською цей текст новини Steam. Зроби його читабельним, збережи основний зміст і оформи під повідомлення для Discord. Максимум 1900 символів:\n\n{news['contents'][:4000]}"
+
+response = client.models.generate_content(
+    model='gemini-3.6-flash',
+    contents=prompt
+)
+
+data = {
+    "content": f"**Новина: {news['title']}**\n\n{response.text}\n\n*🔗 [Читати в Steam]({news['url']})*"
+}
+res = requests.post(WEBHOOK_URL, json=data)
+
+if res.status_code == 204:
+    print("Успішно відправлено в Discord!")
 else:
-    print("Нових новин за останні 20 хвилин немає. Чекаємо далі...")
+    print(f"Помилка відправки: {res.text}")

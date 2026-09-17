@@ -1,7 +1,7 @@
 name: Steam News Bot
 on:
   schedule:
-    - cron: '0 * * * *' # Запуск щогодини
+    - cron: '*/15 * * * *'
 jobs:
   run-bot:
     runs-on: ubuntu-latest
